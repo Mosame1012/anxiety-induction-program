@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>焦虑诱发实验程序</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 介绍页面 -->
+    <div id="consent-page" class="page active">
+        <div class="container">
+            <h1>焦虑诱发实验介绍</h1>
+            
+            <div class="intro-section">
+                <h2>🎯 研究目的</h2>
+                <p>本实验旨在采用视听刺激方式，探索焦虑情绪的诱发效果及测量方法。通过呈现经过验证的情绪性材料，我们期望：</p>
+                <ul>
+                    <li>建立一种可靠、可控的实验室焦虑诱发程序</li>
+                    <li>通过主观量表（VAS、SAI）对焦虑状态变化的敏感性</li>
+                    <li>为后续生理信号（如EEG）与情绪状态的相关性研究提供基础</li>
+                </ul>
+            </div>
+            
+            <div class="intro-section">
+                <h2>🔬 实验流程</h2>
+                <p><strong>预计总时长：12-15分钟</strong></p>
+                
+                <h3>第一阶段：基线评估（约3分钟）</h3>
+                <ul>
+                    <li>填写视觉模拟量表（VAS），评估当前主观焦虑程度</li>
+                    <li>完成状态-特质焦虑量表（SAI）的前测部分</li>
+                    <li>注：在正式实验中，此阶段前先记录您的脑电（EEG）信号</li>
+                </ul>
+                
+                <h3>第二阶段：焦虑诱发环节（6~9分钟）</h3>
+                <ul>
+                    <li>您将注视屏幕中央的白色十字</li>
+                    <li>在接下来的一段时间内，系统会在不可预测的时间点呈现：</li>
+                    <ul>
+                        <li>令人不适的图片</li>
+                        <li>不悦的音频片段</li>
+                    </ul>
+                    <li>所有刺激材料均选自国际情绪图片系统（IAPS）和国际情感数字声音系统（IADS）</li>
+                    <li>界面中设有"结束"按钮，在所有内容出现后可以点击结束该环节，您也可随时中止实验</li>
+                </ul>
+                
+                <h3>第三阶段：诱发后评估（约3分钟）</h3>
+                <ul>
+                    <li>再次填写VAS量表</li>
+                    <li>完成SAI量表的后测部分</li>
+                    <li>注：在正式实验室环境中，此阶段将继续记录EEG信号</li>
+                </ul>
+                
+                <h3>第四阶段：结果反馈</h3>
+                <ul>
+                    <li>系统将自动分析您的前后测数据</li>
+                    <li>显示焦虑水平变化值及简要解释</li>
+                </ul>
+            </div>
+            
+            <div class="intro-section warning">
+                <h2>⚠️ 警告</h2>
+                <p>图片可能含有恐怖血腥元素</p>
+                <p><strong>不适宜参与人群：</strong></p>
+                <ul>
+                    <li>有严重精神疾病史（如焦虑症、抑郁症、PTSD等）的诊断</li>
+                    <li>近期经历重大生活压力事件</li>
+                    <li>怀孕期间</li>
+                    <li>有心脑血管疾病史</li>
+                    <li>未成年人（18岁以下）</li>
+                </ul>
+                <p class="important">若您属于以上任何一类，请勿参与本实验。</p>
+            </div>
+            
+            <div class="intro-section">
+                <h2>📄 免责声明</h2>
+                <ul>
+                    <li>本程序为科学研究工具，不用于临床诊断</li>
+                    <li>如实验过程中感到持续不适，建议停止参与并咨询专业心理医生</li>
+                    <li>研究者不对参与实验可能产生的任何心理不适承担医疗责任</li>
+                    <li>参与者需确认自身心理状况适合参加此类情绪诱发实验</li>
+                </ul>
+            </div>
+            
+            <div class="button-group">
+                <button id="agree-btn" class="primary-btn">我已了解并开始实验</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EEG说明页面 -->
+    <div id="eeg-page" class="page">
+        <div class="container">
+            <h1 id="eeg-title">EEG准备说明</h1>
+            <p class="instruction" id="eeg-instruction">请按照以下步骤准备EEG设备</p>
+            
+            <div class="eeg-content">
+                <h2>对于那些正式的且需要用到EEG的实验，建议进行以下步骤：</h2>
+                
+                <!-- 前测步骤 -->
+                <ol class="eeg-steps" id="eeg-pre-steps">
+                    <li>佩戴好EEG设备</li>
+                    <li>持续2-3分钟的适应期，该环节应当避免活动（运动、对话和任务）和刺激（如声音、光源和文字）</li>
+                    <li>开始第一次EEG的监测（或者开始EEG监测）</li>
+                </ol>
+                
+                <!-- 后测步骤 -->
+                <ol class="eeg-steps" id="eeg-post-steps" style="display: none;">
+                    <li>该环节应当避免活动（运动、对话和任务）和刺激（如声音、光源和文字）</li>
+                    <li>开始第二次EEG的监测（或者结束EEG监测）</li>
+                </ol>
+                
+                <div class="eeg-note" id="eeg-note">
+                    <p><strong>注意：</strong>请确保EEG设备正常工作后再继续。</p>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button id="eeg-continue-btn" class="primary-btn">继续</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 前测页面 -->
+    <div id="pretest-page" class="page">
+        <div class="container">
+            <h1>焦虑基线评估（前测）</h1>
+            <p class="instruction">请根据您当前的真实感受，完成以下量表。</p>
+            
+            <!-- VAS量表 -->
+            <div class="scale-section">
+                <h2>视觉模拟量表（VAS）</h2>
+                <p>请标记您当前的焦虑程度（0-100）</p>
+                <div class="vas-container">
+                    <div class="vas-text-labels">
+                        <span>完全平静</span>
+                        <span>中度焦虑</span>
+                        <span>极度焦虑</span>
+                    </div>
+                    <input type="range" id="pre-vas" min="0" max="100" value="0" class="vas-slider">
+                    <div class="vas-number-labels">
+                        <span>0</span>
+                        <span>50</span>
+                        <span>100</span>
+                    </div>
+                    <div class="vas-value">当前值: <span id="pre-vas-value">0</span></div>
+                </div>
+            </div>
+            
+            <!-- SAI量表 -->
+            <div class="scale-section">
+                <h2>状态焦虑量表（SAI）</h2>
+                <p>请根据您当前的感受，选择最符合的选项</p>
+                <div id="pre-sai-questions"></div>
+            </div>
+            
+            <div class="button-group">
+                <button id="pretest-submit-btn" class="primary-btn">提交并继续</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 焦虑诱发页面 -->
+    <div id="induction-page" class="page">
+        <div class="induction-container">
+            <div class="induction-header">
+                <p id="induction-top-text">在接下来的一段时间里，你可能会在任意时刻接触到令人不适的声音和图像，时间和次数均不确定</p>
+            </div>
+            
+            <div class="induction-center">
+                <div class="fixation-circle">
+                    <div class="fixation-cross">+</div>
+                </div>
+                <div id="stimulus-container" class="stimulus-container">
+                    <img id="stimulus-image" src="" alt="" class="stimulus-image">
+                </div>
+            </div>
+            
+            <div class="induction-footer">
+                <p id="induction-bottom-text">请注视屏幕中央的十字</p>
+                <button id="end-btn" class="end-btn">结束</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 后测页面 -->
+    <div id="posttest-page" class="page">
+        <div class="container">
+            <h1>焦虑诱发后评估（后测）</h1>
+            <p class="instruction">请根据您当前的真实感受，完成以下量表。</p>
+            
+            <!-- VAS量表 -->
+            <div class="scale-section">
+                <h2>视觉模拟量表（VAS）</h2>
+                <p>请标记您当前的焦虑程度（0-100）</p>
+                <div class="vas-container">
+                    <div class="vas-text-labels">
+                        <span>完全平静</span>
+                        <span>中度焦虑</span>
+                        <span>极度焦虑</span>
+                    </div>
+                    <input type="range" id="post-vas" min="0" max="100" value="0" class="vas-slider">
+                    <div class="vas-number-labels">
+                        <span>0</span>
+                        <span>50</span>
+                        <span>100</span>
+                    </div>
+                    <div class="vas-value">当前值: <span id="post-vas-value">0</span></div>
+                </div>
+            </div>
+            
+            <!-- SAI量表 -->
+            <div class="scale-section">
+                <h2>状态焦虑量表（SAI）</h2>
+                <p>请根据您当前的感受，选择最符合的选项</p>
+                <div id="post-sai-questions"></div>
+            </div>
+            
+            <div class="button-group">
+                <button id="posttest-submit-btn" class="primary-btn">提交并查看结果</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 结果页面 -->
+    <div id="result-page" class="page">
+        <div class="container">
+            <h1>实验结果</h1>
+            
+            <div class="result-section">
+                <h2>VAS量表结果</h2>
+                <div class="result-table">
+                    <div class="result-row">
+                        <span>前测得分:</span>
+                        <span id="result-pre-vas">-</span>
+                    </div>
+                    <div class="result-row">
+                        <span>后测得分:</span>
+                        <span id="result-post-vas">-</span>
+                    </div>
+                    <div class="result-row change">
+                        <span>变化值:</span>
+                        <span id="result-vas-change">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-section">
+                <h2>SAI量表结果</h2>
+                <div class="result-table">
+                    <div class="result-row">
+                        <span>前测得分:</span>
+                        <span id="result-pre-sai">-</span>
+                    </div>
+                    <div class="result-row">
+                        <span>后测得分:</span>
+                        <span id="result-post-sai">-</span>
+                    </div>
+                    <div class="result-row change">
+                        <span>变化值:</span>
+                        <span id="result-sai-change">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-section">
+                <h2>综合评估</h2>
+                <div id="result-evaluation" class="evaluation">
+                    <p>正在分析结果...</p>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button id="restart-btn" class="primary-btn">重新开始实验</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 音频元素 -->
+    <audio id="stimulus-audio" preload="auto">
+        <source src="audio/stimulus_01.mp3" type="audio/mpeg">
+    </audio>
+
+    <script src="script.js"></script>
+</body>
+</html>

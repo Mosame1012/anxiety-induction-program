@@ -1,0 +1,559 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #E8E4DC;
+    background: linear-gradient(135deg, #3A3530 0%, #2A2520 100%);
+    min-height: 100vh;
+}
+
+.page {
+    display: none;
+    min-height: 100vh;
+}
+
+.page.active {
+    display: block;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #3A3530;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    min-height: 100vh;
+}
+
+h1 {
+    color: #E8E4DC;
+    margin-bottom: 30px;
+    text-align: center;
+    font-size: 2.5em;
+}
+
+h2 {
+    color: #D8D4CC;
+    margin: 25px 0 15px 0;
+    font-size: 1.5em;
+}
+
+p {
+    margin-bottom: 15px;
+    color: #C8C4BC;
+}
+
+/* 介绍页面样式 */
+.intro-section {
+    margin: 30px 0;
+    padding: 25px;
+    background: #4A4540;
+    border-radius: 10px;
+    border-left: 4px solid #6B6560;
+}
+
+.intro-section h2 {
+    border-bottom: 2px solid #6B6560;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.intro-section h3 {
+    color: #D8D4CC;
+    margin: 20px 0 10px 0;
+    font-size: 1.2em;
+}
+
+.intro-section ul {
+    margin-left: 25px;
+    margin-bottom: 15px;
+}
+
+.intro-section li {
+    margin-bottom: 8px;
+    color: #C8C4BC;
+}
+
+.intro-section.warning {
+    background: #5A4540;
+    border-left: 4px solid #8B6560;
+}
+
+.intro-section.warning h2 {
+    border-bottom-color: #8B6560;
+}
+
+.intro-section .important {
+    color: #E8D4CC;
+    font-weight: 600;
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(139, 101, 96, 0.2);
+    border-radius: 5px;
+}
+
+.button-group {
+    text-align: center;
+    margin-top: 40px;
+}
+
+.primary-btn {
+    background: linear-gradient(135deg, #6B6560 0%, #7B7570 100%);
+    color: #E8E4DC;
+    border: none;
+    padding: 15px 40px;
+    font-size: 1.1em;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+.primary-btn:active {
+    transform: translateY(0);
+}
+
+/* EEG说明页面样式 */
+.eeg-content {
+    margin: 30px 0;
+}
+
+.eeg-content h2 {
+    color: #D8D4CC;
+    margin: 25px 0 20px 0;
+    font-size: 1.4em;
+}
+
+.eeg-steps {
+    margin: 20px 0;
+    padding-left: 25px;
+}
+
+.eeg-steps li {
+    margin-bottom: 15px;
+    line-height: 1.8;
+    color: #C8C4BC;
+    font-size: 1.05em;
+}
+
+.eeg-note {
+    margin-top: 30px;
+    padding: 20px;
+    background: #5A5550;
+    border-left: 4px solid #7B7570;
+    border-radius: 5px;
+}
+
+.eeg-note p {
+    margin: 0;
+    color: #E8E4DC;
+    font-size: 1em;
+}
+
+/* 量表页面样式 */
+.instruction {
+    text-align: center;
+    font-size: 1.1em;
+    color: #E8E4DC;
+    font-weight: 600;
+    margin-bottom: 30px;
+}
+
+.scale-section {
+    margin: 30px 0;
+    padding: 25px;
+    background: #4A4540;
+    border-radius: 10px;
+    border-left: 4px solid #6B6560;
+}
+
+/* VAS量表样式 */
+.vas-container {
+    margin: 30px 0;
+}
+
+.vas-text-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    color: #C8C4BC;
+}
+
+.vas-text-labels span:first-child {
+    text-align: left;
+}
+
+.vas-text-labels span:nth-child(2) {
+    text-align: center;
+}
+
+.vas-text-labels span:last-child {
+    text-align: right;
+}
+
+.vas-slider {
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(to right, #5A5550, #6B6560, #7B7570);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.vas-number-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #C8C4BC;
+    font-weight: 600;
+}
+
+.vas-number-labels span:first-child {
+    text-align: left;
+}
+
+.vas-number-labels span:nth-child(2) {
+    text-align: center;
+}
+
+.vas-number-labels span:last-child {
+    text-align: right;
+}
+
+.vas-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: #8B8580;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.vas-slider::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: #8B8580;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.vas-value {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #E8E4DC;
+}
+
+/* SAI/TAI量表样式 */
+.question-item {
+    margin: 20px 0;
+    padding: 15px;
+    background: #4A4540;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.question-text {
+    margin-bottom: 12px;
+    font-weight: 500;
+    color: #E8E4DC;
+}
+
+.options-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.option-label {
+    flex: 1;
+    min-width: 100px;
+}
+
+.option-label input[type="radio"] {
+    margin-right: 8px;
+    accent-color: #8B8580;
+}
+
+.option-label:hover {
+    background: #5A5550;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+/* 焦虑诱发页面样式 */
+.induction-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: #2A2520;
+    color: white;
+}
+
+.induction-header {
+    text-align: center;
+    padding: 30px 20px;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.induction-header p {
+    color: #fff;
+    font-size: 1.2em;
+    margin: 0;
+}
+
+.induction-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.fixation-circle {
+    width: 150px;
+    height: 150px;
+    border: 3px solid white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+}
+
+.fixation-cross {
+    font-size: 60px;
+    color: white;
+    font-weight: 300;
+}
+
+.stimulus-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.stimulus-container.active {
+    opacity: 1;
+}
+
+.stimulus-image {
+    width: 70vh;
+    height: 70vh;
+    object-fit: contain;
+    object-position: center;
+}
+
+.induction-footer {
+    text-align: center;
+    padding: 30px 20px;
+    background: rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.induction-footer p {
+    color: #fff;
+    font-size: 1.2em;
+    margin-bottom: 15px;
+}
+
+.end-btn {
+    background: #6B6560;
+    color: #E8E4DC;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1em;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.end-btn:hover {
+    background: #7B7570;
+}
+
+/* 结果页面样式 */
+.result-section {
+    margin: 30px 0;
+    padding: 25px;
+    background: #4A4540;
+    border-radius: 10px;
+    border-left: 4px solid #6B6560;
+}
+
+.result-table {
+    margin-top: 20px;
+}
+
+.result-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 15px;
+    background: #3A3530;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.result-row span:first-child {
+    font-weight: 500;
+    color: #C8C4BC;
+}
+
+.result-row span:last-child {
+    font-weight: 600;
+    color: #E8E4DC;
+}
+
+.result-row.change {
+    background: linear-gradient(135deg, #5A5550 0%, #4A4540 100%);
+    border-left: 4px solid #7B7570;
+}
+
+.result-row.change span:last-child {
+    color: #E8E4DC;
+}
+
+.evaluation {
+    padding: 20px;
+    background: #4A4540;
+    border-radius: 8px;
+    border-left: 4px solid #6B6560;
+}
+
+.evaluation p {
+    font-size: 1.1em;
+    color: #E8E4DC;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px 15px;
+    }
+    
+    h1 {
+        font-size: 2em;
+    }
+    
+    h2 {
+        font-size: 1.3em;
+    }
+    
+    .fixation-circle {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .fixation-cross {
+        font-size: 40px;
+    }
+    
+    .stimulus-image {
+        max-width: 80%;
+        max-height: 80%;
+    }
+    
+    .induction-header p,
+    .induction-footer p {
+        font-size: 1em;
+    }
+    
+    .options-group {
+        flex-direction: column;
+    }
+    
+    .option-label {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 15px 10px;
+    }
+    
+    h1 {
+        font-size: 1.5em;
+    }
+    
+    .primary-btn {
+        padding: 12px 30px;
+        font-size: 1em;
+    }
+    
+    .fixation-circle {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .fixation-cross {
+        font-size: 30px;
+    }
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page.active .container {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* 加载动画 */
+.loading {
+    text-align: center;
+    padding: 40px;
+}
+
+.loading::after {
+    content: '';
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #8B8580;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
