@@ -359,7 +359,13 @@ function initializePosttestPage() {
 
 // 结果页面
 function initializeResultPage() {
+    const exportBtn = document.getElementById('export-btn');
     const restartBtn = document.getElementById('restart-btn');
+    
+    exportBtn.addEventListener('click', function() {
+        exportData();
+    });
+    
     restartBtn.addEventListener('click', function() {
         if (confirm('确定要重新开始实验吗？当前数据将丢失。')) {
             resetExperiment();
@@ -419,6 +425,66 @@ function displayResults() {
     
     // 保存数据到本地存储
     localStorage.setItem('anxietyInductionData', JSON.stringify(experimentData));
+}
+
+function exportData() {
+    // 计算分数
+    const preVasScore = experimentData.pretest.vas;
+    const postVasScore = experimentData.posttest.vas;
+    const vasChange = postVasScore - preVasScore;
+    
+    const preSaiScore = calculateTotalScore(experimentData.pretest.sai);
+    const postSaiScore = calculateTotalScore(experimentData.posttest.sai);
+    const saiChange = postSaiScore - preSaiScore;
+    
+    // 创建导出数据对象
+    const exportData = {
+        timestamp: new Date().toLocaleString('zh-CN'),
+        pretest: {
+            vas: preVasScore,
+            sai: {
+                totalScore: preSaiScore,
+                answers: experimentData.pretest.sai
+            }
+        },
+        posttest: {
+            vas: postVasScore,
+            sai: {
+                totalScore: postSaiScore,
+                answers: experimentData.posttest.sai
+            }
+        },
+        changes: {
+            vas: vasChange,
+            sai: saiChange
+        }
+    };
+    
+    // 转换为JSON字符串
+    const jsonString = JSON.stringify(exportData, null, 2);
+    
+    // 创建Blob对象
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    
+    // 生成文件名（包含时间戳）
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const fileName = `anxiety_experiment_${timestamp}.json`;
+    
+    // 创建下载链接
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    
+    // 清理
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    // 获取下载路径（浏览器通常下载到默认下载文件夹）
+    const downloadPath = '默认下载文件夹';
+    alert(`数据已保存到 ${downloadPath}\n文件名: ${fileName}`);
 }
 
 function resetExperiment() {
