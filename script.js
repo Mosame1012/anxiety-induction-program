@@ -236,7 +236,7 @@ function startInduction() {
     fixationCircle.style.visibility = 'visible';
     
     // 获取images目录下的图片文件数量
-    const maxFileNumber = 12; // 根据实际文件数量设置
+    const maxFileNumber = 20; // 根据实际文件数量设置
     
     // 生成11个从1到maxFileNumber的随机乱序数字（不重复）
     const randomIndices = generateRandomIndices(11, maxFileNumber);
