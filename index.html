@@ -24,7 +24,7 @@
             
             <div class="intro-section">
                 <h2>🔬 实验流程</h2>
-                <p><strong>预计总时长：12-15分钟</strong></p>
+                <p><strong>预计总时长：11-13分钟</strong></p>
                 
                 <h3>第一阶段：基线评估（约3分钟）</h3>
                 <ul>
@@ -33,7 +33,7 @@
                     <li>注：在正式实验中，此阶段前先记录您的脑电（EEG）信号</li>
                 </ul>
                 
-                <h3>第二阶段：焦虑诱发环节（6~9分钟）</h3>
+                <h3>第二阶段：焦虑诱发环节（5~7分钟）</h3>
                 <ul>
                     <li>您将注视屏幕中央的白色十字</li>
                     <li>在接下来的一段时间内，系统会在不可预测的时间点呈现：</li>
@@ -41,6 +41,8 @@
                         <li>令人不适的图片</li>
                         <li>不悦的音频片段</li>
                     </ul>
+                    <li>每次实验随机呈现8-14个刺激材料,间隔时间严格在10-60秒之间</li>
+                    <li>采用三种不同的分布模式模拟不同的焦虑诱发情境</li>
                     <li>所有刺激材料均选自网络公开图片集Emotion6和testImages_artphoto；以及免费音频素材库Pixabay。仅用于学术用途，严禁用于商业用途。</li>
                     <li>界面中设有"结束"按钮，在所有内容出现后可以点击结束该环节，您也可随时中止实验</li>
                 </ul>
@@ -92,32 +94,44 @@
     <!-- EEG说明页面 -->
     <div id="eeg-page" class="page">
         <div class="container">
-            <h1 id="eeg-title">EEG准备说明</h1>
-            <p class="instruction" id="eeg-instruction">请按照以下步骤准备EEG设备</p>
-            
+            <h1 id="eeg-title">EEG测量准备</h1>
+            <p class="instruction" id="eeg-instruction">请按照以下步骤准备EEG设备，然后开始计时</p>
+
+            <!-- 计时器显示 -->
+            <div id="eeg-timer-display" class="eeg-timer-display" style="display: none;">计时中: 00:00</div>
+
+            <!-- 时间节点显示 -->
+            <div id="eeg-time-nodes" class="eeg-time-nodes" style="display: none;"></div>
+
             <div class="eeg-content">
                 <h2>对于那些正式的且需要用到EEG的实验，建议进行以下步骤：</h2>
-                
+
                 <!-- 前测步骤 -->
                 <ol class="eeg-steps" id="eeg-pre-steps">
                     <li>佩戴好EEG设备</li>
                     <li>持续2-3分钟的适应期，该环节应当避免活动（运动、对话和任务）和刺激（如声音、光源和文字）</li>
-                    <li>开始第一次EEG的监测（或者开始EEG监测）</li>
+                    <li>点击"开始EEG测量计时"按钮，开始记录EEG信号</li>
+                    <li>点击"继续"按钮，进入焦虑诱发环节</li>
                 </ol>
-                
+
                 <!-- 后测步骤 -->
                 <ol class="eeg-steps" id="eeg-post-steps" style="display: none;">
+                    <li>焦虑诱发环节已结束</li>
                     <li>该环节应当避免活动（运动、对话和任务）和刺激（如声音、光源和文字）</li>
-                    <li>开始第二次EEG的监测（或者结束EEG监测）</li>
+                    <li>点击"结束计时并显示时间节点"按钮，查看EEG测量记录</li>
+                    <li>点击"进入后测"按钮，开始填写后测量表</li>
                 </ol>
-                
+
                 <div class="eeg-note" id="eeg-note">
-                    <p><strong>注意：</strong>请确保EEG设备正常工作后再继续。</p>
+                    <p><strong>注意：</strong>请确保EEG设备正常工作后再开始计时。</p>
                 </div>
             </div>
-            
+
             <div class="button-group">
-                <button id="eeg-continue-btn" class="primary-btn">继续</button>
+                <button id="eeg-start-btn" class="primary-btn" style="display: none;">开始EEG测量计时</button>
+                <button id="eeg-continue-btn" class="primary-btn" style="display: none;">继续</button>
+                <button id="eeg-end-btn" class="primary-btn" style="display: none;">结束计时并显示时间节点</button>
+                <button id="eeg-go-posttest-btn" class="primary-btn" style="display: none;">进入后测</button>
             </div>
         </div>
     </div>

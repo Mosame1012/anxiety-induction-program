@@ -10,6 +10,16 @@ let experimentData = {
     }
 };
 
+// EEG计时相关变量
+let eegTimer = {
+    startTime: null,        // EEG测量开始时间
+    inductionStartTime: null,  // 焦虑诱发开始时间
+    inductionEndTime: null,    // 焦虑诱发结束时间
+    endTime: null,         // EEG测量结束时间
+    timerInterval: null,   // 计时器间隔ID
+    isRecording: false     // 是否正在记录
+};
+
 // SAI和TAI量表题目
 const saiQuestions = [
     { id: 1, text: "我感到心情平静", reverse: true },
@@ -41,10 +51,88 @@ const options = [
     { value: 4, text: "非常明显" }
 ];
 
-// 焦虑诱发时间节点（秒）
-const inductionTimes = [32, 88, 118, 151, 163, 176, 229, 284, 296, 309, 354];
+// 焦虑诱发参数
 const inductionDuration = 5; // 刺激持续时间（秒）
-const totalInductionTime = 380; // 总诱发时间（秒）
+const minTotalTime = 300; // 最小总时间（5分钟 = 300秒）
+const maxTotalTime = 420; // 最大总时间（7分钟 = 420秒）
+const minStimulusCount = 8; // 最小刺激次数
+const maxStimulusCount = 14; // 最大刺激次数
+const minInterval = 10; // 最小间隔（秒）
+const maxInterval = 60; // 最大间隔（秒）
+
+// 五种刺激分布模式配置(简化版,优先实现容易的模式)
+const distributionPatterns = {
+    // 模式一：前密后疏（前期密集，后期稀疏）
+    'front_dense': {
+        name: '前密后疏',
+        description: '快速建立焦虑基线，后期减少刺激让焦虑持续但不确定',
+        zones: [
+            { percent: 0.33, stimulusPercent: [0.40, 0.50] },  // 前1/3时间，40-50%刺激
+            { percent: 0.33, stimulusPercent: [0.30, 0.35] },  // 中间1/3时间，30-35%刺激
+            { percent: 0.34, stimulusPercent: [0.20, 0.25] }   // 后1/3时间，20-25%刺激
+        ]
+    },
+    // 模式二：前疏后密（前期稀疏，后期密集）
+    'front_sparse': {
+        name: '前疏后密',
+        description: '先让被试放松警惕，后期突然密集刺激',
+        zones: [
+            { percent: 0.33, stimulusPercent: [0.20, 0.25] },  // 前1/3时间，20-25%刺激
+            { percent: 0.33, stimulusPercent: [0.30, 0.35] },  // 中间1/3时间，30-35%刺激
+            { percent: 0.34, stimulusPercent: [0.40, 0.50] }   // 后1/3时间，40-50%刺激
+        ]
+    },
+    // 模式三：均匀随机
+    'uniform_random': {
+        name: '均匀随机',
+        description: '纯粹的不可预测性，完全随机分布',
+        zones: [
+            { percent: 0.33, stimulusPercent: [0.30, 0.40] },  // 前1/3时间，30-40%刺激
+            { percent: 0.33, stimulusPercent: [0.30, 0.40] },  // 中间1/3时间，30-40%刺激
+            { percent: 0.34, stimulusPercent: [0.30, 0.40] }   // 后1/3时间，30-40%刺激
+        ]
+    }
+};
+
+// 难以实现的模式(待讨论)
+const difficultPatterns = {
+    // 模式四：中间密集（中间阶段密集，两端稀疏）
+    'middle_dense': {
+        name: '中间密集',
+        description: '模拟焦虑的自然累积和消退过程',
+        reason: '在5-7分钟时间范围内,中间50%时间需要容纳50-60%的刺激,导致间隔过小(<10秒)',
+        zones: [
+            { percent: 0.25, stimulusPercent: [0.15, 0.20] },
+            { percent: 0.50, stimulusPercent: [0.50, 0.60] },
+            { percent: 0.25, stimulusPercent: [0.15, 0.20] }
+        ]
+    },
+    // 模式五：双峰密集（两个密集阶段）
+    'double_peak': {
+        name: '双峰密集',
+        description: '模拟焦虑的波浪式起伏',
+        reason: '需要两个密集区,每个30-40%刺激,导致密集区间隔过小(<10秒)',
+        zones: [
+            { percent: 0.25, stimulusPercent: [0.30, 0.40] },
+            { percent: 0.25, stimulusPercent: [0.10, 0.20] },
+            { percent: 0.25, stimulusPercent: [0.30, 0.40] },
+            { percent: 0.25, stimulusPercent: [0.10, 0.20] }
+        ]
+    }
+};
+
+// 根据总时间映射刺激数量范围
+function getStimulusCountRange(totalTime) {
+    // 计算理论最小和最大刺激数
+    const minPossible = Math.ceil(totalTime / (maxInterval + inductionDuration)); // 最大间隔
+    const maxPossible = Math.floor(totalTime / (minInterval + inductionDuration)); // 最小间隔
+
+    // 返回与8-14要求的交集
+    return {
+        min: Math.max(minStimulusCount, minPossible),
+        max: Math.min(maxStimulusCount, maxPossible)
+    };
+}
 
 // 初始化页面
 document.addEventListener('DOMContentLoaded', function() {
@@ -68,7 +156,7 @@ function showPage(pageId) {
 function initializeConsentPage() {
     const agreeBtn = document.getElementById('agree-btn');
     agreeBtn.addEventListener('click', function() {
-        showEEGPage('pre');
+        showPage('pretest-page');
     });
 }
 
@@ -76,14 +164,147 @@ function initializeConsentPage() {
 let eegMode = 'pre'; // 'pre' 表示前测前，'post' 表示后测前
 
 function initializeEEGPage() {
+    const startBtn = document.getElementById('eeg-start-btn');
     const continueBtn = document.getElementById('eeg-continue-btn');
-    continueBtn.addEventListener('click', function() {
-        if (eegMode === 'pre') {
-            showPage('pretest-page');
-        } else if (eegMode === 'post') {
+    const endBtn = document.getElementById('eeg-end-btn');
+    const goPosttestBtn = document.getElementById('eeg-go-posttest-btn');
+    const timerDisplay = document.getElementById('eeg-timer-display');
+    const timeNodesDisplay = document.getElementById('eeg-time-nodes');
+
+    // 开始EEG计时按钮
+    if (startBtn) {
+        startBtn.addEventListener('click', function() {
+            startEGGTimer();
+            this.style.display = 'none';
+            continueBtn.style.display = 'inline-block';
+        });
+    }
+
+    // 继续按钮（前测后进入诱发）
+    if (continueBtn) {
+        continueBtn.addEventListener('click', function() {
+            if (eegMode === 'pre') {
+                showPage('induction-page');
+                startInduction();
+            } else if (eegMode === 'post') {
+                showPage('posttest-page');
+            }
+        });
+    }
+
+    // 结束计时按钮（后测后）
+    if (endBtn) {
+        endBtn.addEventListener('click', function() {
+            stopEGGTimer();
+            displayTimeNodes();
+            this.style.display = 'none';
+            goPosttestBtn.style.display = 'inline-block';
+        });
+    }
+
+    // 进入后测按钮
+    if (goPosttestBtn) {
+        goPosttestBtn.addEventListener('click', function() {
             showPage('posttest-page');
+        });
+    }
+}
+
+// 开始EEG计时
+function startEGGTimer() {
+    eegTimer.startTime = Date.now();
+    eegTimer.isRecording = true;
+
+    // 更新计时器显示
+    const timerDisplay = document.getElementById('eeg-timer-display');
+    if (timerDisplay) {
+        timerDisplay.style.display = 'block';
+    }
+
+    // 启动计时器
+    eegTimer.timerInterval = setInterval(updateTimerDisplay, 100);
+}
+
+// 更新计时器显示
+function updateTimerDisplay() {
+    if (!eegTimer.startTime) return;
+
+    const currentTime = Date.now();
+    const elapsedTime = Math.floor((currentTime - eegTimer.startTime) / 1000);
+
+    const minutes = Math.floor(elapsedTime / 60);
+    const seconds = elapsedTime % 60;
+
+    const timerDisplay = document.getElementById('eeg-timer-display');
+    if (timerDisplay) {
+        const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        if (eegTimer.isRecording) {
+            timerDisplay.textContent = `计时中: ${timeStr} (已过 ${elapsedTime} 秒)`;
+        } else {
+            timerDisplay.textContent = `计时结束: ${timeStr} (总计 ${elapsedTime} 秒)`;
         }
-    });
+    }
+}
+
+// 停止EEG计时
+function stopEGGTimer() {
+    eegTimer.endTime = Date.now();
+    eegTimer.isRecording = false;
+
+    // 清除计时器
+    if (eegTimer.timerInterval) {
+        clearInterval(eegTimer.timerInterval);
+        eegTimer.timerInterval = null;
+    }
+
+    // 保存EEG计时数据到实验数据
+    experimentData.eegTiming = {
+        startTime: eegTimer.startTime,
+        inductionStartTime: eegTimer.inductionStartTime,
+        inductionEndTime: eegTimer.inductionEndTime,
+        endTime: eegTimer.endTime,
+        totalDuration: eegTimer.endTime - eegTimer.startTime,
+        inductionDuration: eegTimer.inductionEndTime - eegTimer.inductionStartTime
+    };
+}
+
+// 显示时间节点
+function displayTimeNodes() {
+    const timeNodesDisplay = document.getElementById('eeg-time-nodes');
+    if (!timeNodesDisplay) return;
+
+    const formatTime = (timestamp) => {
+        if (!timestamp) return '未记录';
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString('zh-CN', { hour12: false });
+    };
+
+    const formatDuration = (ms) => {
+        if (!ms) return '未计算';
+        const seconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes}分${remainingSeconds}秒`;
+    };
+
+    const formatRelativeTime = (timestamp, baseTime) => {
+        if (!timestamp || !baseTime) return '未记录';
+        const elapsedSeconds = Math.floor((timestamp - baseTime) / 1000);
+        return `第 ${elapsedSeconds} 秒`;
+    };
+
+    let html = '<div class="time-nodes-container"><h3>时间节点记录</h3>';
+    html += `<div class="time-node"><span>EEG测量开始：</span><span>${formatTime(eegTimer.startTime)} (第 0 秒)</span></div>`;
+    html += `<div class="time-node"><span>焦虑诱发开始：</span><span>${formatTime(eegTimer.inductionStartTime)} (${formatRelativeTime(eegTimer.inductionStartTime, eegTimer.startTime)})</span></div>`;
+    html += `<div class="time-node"><span>焦虑诱发结束：</span><span>${formatTime(eegTimer.inductionEndTime)} (${formatRelativeTime(eegTimer.inductionEndTime, eegTimer.startTime)})</span></div>`;
+    html += `<div class="time-node"><span>EEG测量结束：</span><span>${formatTime(eegTimer.endTime)} (${formatRelativeTime(eegTimer.endTime, eegTimer.startTime)})</span></div>`;
+    html += '<div class="time-separator"></div>';
+    html += `<div class="time-node highlight"><span>总测量时长：</span><span>${formatDuration(eegTimer.totalDuration)} (${Math.floor(eegTimer.totalDuration / 1000)} 秒)</span></div>`;
+    html += `<div class="time-node highlight"><span>焦虑诱发时长：</span><span>${formatDuration(eegTimer.inductionDuration)} (${Math.floor(eegTimer.inductionDuration / 1000)} 秒)</span></div>`;
+    html += '</div>';
+
+    timeNodesDisplay.innerHTML = html;
+    timeNodesDisplay.style.display = 'block';
 }
 
 function showEEGPage(mode) {
@@ -93,21 +314,36 @@ function showEEGPage(mode) {
     const preSteps = document.getElementById('eeg-pre-steps');
     const postSteps = document.getElementById('eeg-post-steps');
     const note = document.getElementById('eeg-note');
-    
+    const startBtn = document.getElementById('eeg-start-btn');
+    const continueBtn = document.getElementById('eeg-continue-btn');
+    const endBtn = document.getElementById('eeg-end-btn');
+    const timerDisplay = document.getElementById('eeg-timer-display');
+    const timeNodesDisplay = document.getElementById('eeg-time-nodes');
+
+    // 重置显示状态
+    timerDisplay.style.display = 'none';
+    timeNodesDisplay.style.display = 'none';
+
     if (mode === 'pre') {
-        title.textContent = 'EEG准备说明';
-        instruction.textContent = '请按照以下步骤准备EEG设备';
+        title.textContent = 'EEG测量准备';
+        instruction.textContent = '请按照以下步骤准备EEG设备，然后开始计时';
         preSteps.style.display = 'block';
         postSteps.style.display = 'none';
         note.style.display = 'block';
+        startBtn.style.display = 'inline-block';
+        continueBtn.style.display = 'none';
+        endBtn.style.display = 'none';
     } else if (mode === 'post') {
-        title.textContent = 'EEG监测说明';
-        instruction.textContent = '请按照以下步骤进行EEG监测';
+        title.textContent = 'EEG测量结束';
+        instruction.textContent = 'EEG测量已完成，请查看时间节点记录';
         preSteps.style.display = 'none';
         postSteps.style.display = 'block';
         note.style.display = 'none';
+        startBtn.style.display = 'none';
+        continueBtn.style.display = 'none';
+        endBtn.style.display = 'inline-block';
     }
-    
+
     showPage('eeg-page');
 }
 
@@ -178,32 +414,32 @@ function calculateScaleScore(questions, prefix) {
 function initializePretestPage() {
     // 生成量表题目
     generateScaleQuestions(saiQuestions, 'pre-sai-questions', 'pre-sai');
-    
+
     // VAS滑块
     const preVas = document.getElementById('pre-vas');
     const preVasValue = document.getElementById('pre-vas-value');
     preVas.addEventListener('input', function() {
         preVasValue.textContent = this.value;
     });
-    
+
     // 提交按钮
     const submitBtn = document.getElementById('pretest-submit-btn');
     submitBtn.addEventListener('click', function() {
         // 保存VAS分数
         experimentData.pretest.vas = parseInt(preVas.value);
-        
+
         // 计算SAI分数
         const saiResult = calculateScaleScore(saiQuestions, 'pre-sai');
         experimentData.pretest.sai = saiResult.answers;
-        
+
         // 验证是否所有题目都已回答
         if (saiResult.answers.length < saiQuestions.length) {
             alert('请完成所有题目后再提交！');
             return;
         }
-        
-        showPage('induction-page');
-        startInduction();
+
+        // 前测完成后，进入EEG准备页面
+        showEEGPage('pre');
     });
 }
 
@@ -229,48 +465,60 @@ function startInduction() {
     const stimulusContainer = document.getElementById('stimulus-container');
     const stimulusImage = document.getElementById('stimulus-image');
     const fixationCircle = document.querySelector('.fixation-circle');
-    
+
+    // 记录焦虑诱发开始时间
+    eegTimer.inductionStartTime = Date.now();
+
     // 重置状态
     endBtn.disabled = false;
     stimulusContainer.classList.remove('active');
     fixationCircle.style.visibility = 'visible';
-    
+
     // 获取images目录下的图片文件数量
     const maxFileNumber = 20; // 根据实际文件数量设置
-    
-    // 生成11个从1到maxFileNumber的随机乱序数字（不重复）
-    const randomIndices = generateRandomIndices(11, maxFileNumber);
-    
+
+    // 随机生成刺激次数（9-13次）
+    const stimulusCount = Math.floor(Math.random() * (maxStimulusCount - minStimulusCount + 1)) + minStimulusCount;
+
+    // 生成stimulusCount个从1到maxFileNumber的随机乱序数字（不重复）
+    const randomIndices = generateRandomIndices(stimulusCount, maxFileNumber);
+
     // 预加载所有要使用的图片
     randomIndices.forEach(fileIndex => {
         const img = new Image();
         const paddedIndex = String(fileIndex).padStart(2, '0');
         img.src = `images/stimulus_${paddedIndex}.png`;
     });
-    
+
+    // 随机生成总时间（5-7分钟）
+    const totalInductionTime = Math.floor(Math.random() * (maxTotalTime - minTotalTime + 1)) + minTotalTime;
+
+    // 生成刺激时间节点
+    const inductionTimes = generateInductionTimes(stimulusCount, totalInductionTime);
+
     // 设置每个时间节点的刺激
     inductionTimes.forEach((time, index) => {
         const timeout = setTimeout(() => {
             const fileIndex = randomIndices[index];
             const paddedIndex = String(fileIndex).padStart(2, '0');
-            
+
             // 隐藏十字架
             fixationCircle.style.visibility = 'hidden';
-            
+
             // 设置并加载对应的图片
             stimulusImage.src = `images/stimulus_${paddedIndex}.png`;
             stimulusContainer.classList.add('active');
-            
+
             // 设置并加载对应的音频
             stimulusAudio.src = `audio/stimulus_${paddedIndex}.mp3`;
             stimulusAudio.load();
-            
+
             // 播放音频
             const playPromise = stimulusAudio.play();
             if (playPromise !== undefined) {
                 playPromise.catch(err => console.log('音频播放失败:', err));
             }
-            
+
             // 5秒后隐藏刺激并显示十字架
             setTimeout(() => {
                 stimulusContainer.classList.remove('active');
@@ -279,11 +527,11 @@ function startInduction() {
                 stimulusAudio.currentTime = 0;
             }, inductionDuration * 1000);
         }, time * 1000);
-        
+
         currentTimeouts.push(timeout);
     });
-    
-    // 380秒后结束
+
+    // 总时间后结束
     inductionTimer = setTimeout(() => {
         topText.textContent = '请点击结束按钮';
         bottomText.textContent = '请点击结束按钮';
@@ -307,6 +555,328 @@ function generateRandomIndices(n, max) {
     return indices.slice(0, n);
 }
 
+// 生成刺激时间节点（基于分布模式）
+function generateInductionTimes(stimulusCount, totalTime) {
+    // 根据总时间获取刺激数量范围
+    const countRange = getStimulusCountRange(totalTime);
+
+    // 检查请求的刺激数量是否在可行范围内
+    if (stimulusCount < countRange.min) {
+        console.warn(`刺激数量${stimulusCount}小于最小可行数量${countRange.min},自动调整为${countRange.min}`);
+        stimulusCount = countRange.min;
+    } else if (stimulusCount > countRange.max) {
+        console.warn(`刺激数量${stimulusCount}大于最大可行数量${countRange.max},自动调整为${countRange.max}`);
+        stimulusCount = countRange.max;
+    }
+
+    // 随机选择一种分布模式(只使用容易实现的)
+    const patternKeys = Object.keys(distributionPatterns);
+    const selectedPatternKey = patternKeys[Math.floor(Math.random() * patternKeys.length)];
+    const pattern = distributionPatterns[selectedPatternKey];
+
+    console.log(`选择的分布模式: ${pattern.name}`);
+    console.log(`总时间: ${totalTime}秒, 刺激数量: ${stimulusCount}个`);
+
+    // 第二阶段：区块划分与刺激分配
+    const zones = allocateStimuliToZones(stimulusCount, totalTime, pattern);
+
+    // 第三阶段：为每个区块生成时间点
+    let allTimes = [];
+    let lastStimulusEnd = 0;
+
+    zones.forEach((zone, zoneIndex) => {
+        const zoneTimes = generateTimesForZone(
+            zone.start,
+            zone.end,
+            zone.stimulusCount,
+            lastStimulusEnd
+        );
+
+        allTimes = allTimes.concat(zoneTimes);
+
+        // 更新最后一个刺激的结束时间
+        if (zoneTimes.length > 0) {
+            lastStimulusEnd = zoneTimes[zoneTimes.length - 1] + inductionDuration;
+        }
+    });
+
+    // 第四阶段：整体调整与验证
+    const validatedTimes = validateAndAdjustTimes(allTimes, totalTime);
+
+    return validatedTimes;
+}
+
+// 为区块分配刺激数量
+function allocateStimuliToZones(totalStimuli, totalTime, pattern) {
+    const zones = [];
+    let currentTime = 0;
+    let allocatedStimuli = 0;
+
+    pattern.zones.forEach((zoneConfig, index) => {
+        const isLastZone = index === pattern.zones.length - 1;
+
+        // 计算区块持续时间
+        const zoneDuration = isLastZone
+            ? totalTime - currentTime
+            : Math.floor(totalTime * zoneConfig.percent);
+
+        // 随机确定该区块的刺激百分比
+        const minPercent = zoneConfig.stimulusPercent[0];
+        const maxPercent = zoneConfig.stimulusPercent[1];
+        const stimulusPercent = Math.random() * (maxPercent - minPercent) + minPercent;
+
+        // 计算该区块的刺激数量
+        let zoneStimulusCount;
+        if (isLastZone) {
+            // 最后一个区块分配剩余的所有刺激
+            zoneStimulusCount = totalStimuli - allocatedStimuli;
+        } else {
+            zoneStimulusCount = Math.floor(totalStimuli * stimulusPercent);
+        }
+
+        // 确保至少分配1个刺激（如果不是最后一个区块）
+        if (!isLastZone && zoneStimulusCount < 1) {
+            zoneStimulusCount = 1;
+        }
+
+        // 计算区块结束时间
+        const zoneEnd = currentTime + zoneDuration;
+
+        zones.push({
+            start: currentTime,
+            end: zoneEnd,
+            stimulusCount: zoneStimulusCount,
+            duration: zoneDuration
+        });
+
+        allocatedStimuli += zoneStimulusCount;
+        currentTime = zoneEnd;
+    });
+
+    // 调整确保刺激总数正确
+    const difference = totalStimuli - allocatedStimuli;
+    if (difference !== 0) {
+        // 将差异分配到最后一个区块
+        zones[zones.length - 1].stimulusCount += difference;
+    }
+
+    return zones;
+}
+
+// 为单个区块生成时间点
+function generateTimesForZone(zoneStart, zoneEnd, stimulusCount, lastStimulusEnd) {
+    const times = [];
+
+    if (stimulusCount === 0) {
+        return times;
+    }
+
+    // 计算第一个刺激的最早和最晚时间
+    const earliestFirst = Math.max(zoneStart, lastStimulusEnd + minInterval);
+    const minTimeNeeded = (stimulusCount - 1) * (inductionDuration + minInterval) + inductionDuration;
+    const latestFirst = zoneEnd - minTimeNeeded;
+
+    // 如果无法放置所有刺激，尝试动态调整
+    if (latestFirst < earliestFirst) {
+        console.warn(`警告: 区块[${zoneStart}, ${zoneEnd}]无法容纳${stimulusCount}个刺激`);
+        console.warn(`  最早开始时间: ${earliestFirst}, 最晚开始时间: ${latestFirst}`);
+        console.warn(`  最小需要时间: ${minTimeNeeded}, 实际可用时间: ${zoneEnd - zoneStart}`);
+
+        // 尝试尽可能多地放置刺激
+        const maxPossibleStimuli = Math.floor((zoneEnd - earliestFirst) / (inductionDuration + minInterval));
+        const adjustedStimulusCount = Math.max(1, maxPossibleStimuli);
+
+        console.warn(`  调整刺激数量: ${stimulusCount} -> ${adjustedStimulusCount}`);
+
+        return generateTimesForZone(zoneStart, zoneEnd, adjustedStimulusCount, lastStimulusEnd);
+    }
+
+    // 生成第一个刺激时间
+    let currentTime = Math.random() * (latestFirst - earliestFirst) + earliestFirst;
+    times.push(Math.round(currentTime));
+
+    // 生成后续刺激
+    for (let i = 1; i < stimulusCount; i++) {
+        const prevEnd = times[i - 1] + inductionDuration;
+
+        // 计算剩余需要放置的刺激数
+        const remainingStimuli = stimulusCount - i;
+
+        // 计算最小需要时间
+        const minTimeNeeded = (remainingStimuli - 1) * (inductionDuration + minInterval) + inductionDuration;
+
+        // 计算实际最大间隔
+        const remainingTime = zoneEnd - prevEnd;
+        const maxAllowedInterval = minInterval + (remainingTime - minTimeNeeded) / remainingStimuli;
+        const actualMaxInterval = Math.min(maxInterval, maxAllowedInterval);
+
+        // 在范围内随机选择间隔
+        const interval = Math.random() * (actualMaxInterval - minInterval) + minInterval;
+        currentTime = prevEnd + interval;
+
+        // 确保不超过区块结束时间
+        if (currentTime + inductionDuration > zoneEnd) {
+            currentTime = zoneEnd - inductionDuration;
+        }
+
+        times.push(Math.round(currentTime));
+    }
+
+    return times;
+}
+
+// 验证和调整时间序列
+function validateAndAdjustTimes(times, totalTime) {
+    let adjustedTimes = [...times];
+
+    console.log(`验证时间序列, 总时间: ${totalTime}秒, 刺激数量: ${adjustedTimes.length}`);
+
+    // 1. 检查并调整超时的刺激（从后向前处理）
+    let outOfRangeCount = 0;
+    for (let i = adjustedTimes.length - 1; i >= 0; i--) {
+        if (adjustedTimes[i] + inductionDuration > totalTime) {
+            // 尝试将刺激移动到允许的范围内
+            const latestValidTime = totalTime - inductionDuration;
+
+            // 检查移动后是否会与前面一个刺激冲突
+            if (i > 0) {
+                const prevEnd = adjustedTimes[i - 1] + inductionDuration;
+                const minValidTime = prevEnd + minInterval;
+
+                if (minValidTime <= latestValidTime) {
+                    adjustedTimes[i] = latestValidTime;
+                    console.log(`  调整刺激 ${i+1}: ${times[i]} -> ${latestValidTime}`);
+                } else {
+                    adjustedTimes.splice(i, 1);
+                    outOfRangeCount++;
+                    console.log(`  移除超时刺激 ${i+1}: ${times[i]}`);
+                }
+            } else {
+                adjustedTimes.splice(i, 1);
+                outOfRangeCount++;
+                console.log(`  移除超时刺激 ${i+1}: ${times[i]}`);
+            }
+        }
+    }
+
+    if (outOfRangeCount > 0) {
+        console.warn(`警告: 移除了 ${outOfRangeCount} 个超时的刺激`);
+    }
+
+    // 2. 检查并调整间隔（严格要求10-60秒）
+    let intervalAdjustCount = 0;
+    for (let i = 1; i < adjustedTimes.length; i++) {
+        const prevEnd = adjustedTimes[i - 1] + inductionDuration;
+        const currentStart = adjustedTimes[i];
+        const interval = currentStart - prevEnd;
+
+        if (interval < minInterval) {
+            const newTime = prevEnd + minInterval;
+
+            let conflict = false;
+            if (i < adjustedTimes.length - 1) {
+                const nextStart = adjustedTimes[i + 1];
+                const newEnd = newTime + inductionDuration;
+                if (newEnd + minInterval > nextStart) {
+                    conflict = true;
+                }
+            }
+
+            if (!conflict) {
+                adjustedTimes[i] = newTime;
+                intervalAdjustCount++;
+                console.log(`  调整刺激 ${i+1}的间隔: ${interval} -> ${minInterval}`);
+            } else {
+                adjustedTimes.splice(i, 1);
+                intervalAdjustCount++;
+                console.log(`  移除刺激 ${i+1}: 间隔${interval}秒太小且无法调整`);
+                i--;
+            }
+        } else if (interval > maxInterval) {
+            const newTime = prevEnd + maxInterval;
+            adjustedTimes[i] = newTime;
+            intervalAdjustCount++;
+            console.log(`  调整刺激 ${i+1}的间隔: ${interval} -> ${maxInterval}`);
+        }
+    }
+
+    if (intervalAdjustCount > 0) {
+        console.warn(`警告: 调整/移除了 ${intervalAdjustCount} 个刺激的间隔`);
+    }
+
+    // 3. 确保时间序列是递增的
+    adjustedTimes.sort((a, b) => a - b);
+
+    // 4. 再次验证最后一个刺激是否在总时间内
+    if (adjustedTimes.length > 0) {
+        const lastTime = adjustedTimes[adjustedTimes.length - 1];
+        if (lastTime + inductionDuration > totalTime) {
+            adjustedTimes.splice(adjustedTimes.length - 1, 1);
+            console.log(`  移除最后一个刺激: 超出时间限制`);
+        }
+    }
+
+    // 5. 最终验证
+    const finalValidation = validateTimeSequence(adjustedTimes, totalTime);
+    if (!finalValidation.valid) {
+        console.error(`严重错误: 最终验证失败`);
+        console.error(`  原因: ${finalValidation.reason}`);
+        console.error(`  当前刺激数量: ${adjustedTimes.length}`);
+    } else {
+        console.log(`验证通过: ${adjustedTimes.length}个刺激, 间隔范围: ${finalValidation.minInterval}-${finalValidation.maxInterval}秒`);
+    }
+
+    return adjustedTimes;
+}
+
+// 辅助函数:验证时间序列的有效性
+function validateTimeSequence(times, totalTime) {
+    if (times.length === 0) {
+        return { valid: false, reason: '没有生成任何刺激' };
+    }
+
+    // 检查第一个刺激
+    if (times[0] < 0) {
+        return { valid: false, reason: '第一个刺激时间为负' };
+    }
+
+    // 检查间隔(严格要求:10-60秒)
+    let minIntervalFound = Infinity;
+    let maxIntervalFound = -Infinity;
+    let violations = [];
+    for (let i = 1; i < times.length; i++) {
+        const prevEnd = times[i - 1] + inductionDuration;
+        const interval = times[i] - prevEnd;
+
+        if (interval < 10) {
+            violations.push(`刺激${i+1}的间隔${interval}秒过小(要求≥10秒)`);
+        }
+        if (interval > 60) {
+            violations.push(`刺激${i+1}的间隔${interval}秒过大(要求≤60秒)`);
+        }
+
+        minIntervalFound = Math.min(minIntervalFound, interval);
+        maxIntervalFound = Math.max(maxIntervalFound, interval);
+    }
+
+    // 检查最后一个刺激
+    const lastTime = times[times.length - 1];
+    if (lastTime + inductionDuration > totalTime) {
+        violations.push(`最后一个刺激超出总时间限制`);
+    }
+
+    // 如果有违规,返回失败
+    if (violations.length > 0) {
+        return { valid: false, reason: violations.join('; ') };
+    }
+
+    return {
+        valid: true,
+        minInterval: Math.round(minIntervalFound),
+        maxInterval: Math.round(maxIntervalFound)
+    };
+}
+
 function clearAllTimeouts() {
     currentTimeouts.forEach(timeout => clearTimeout(timeout));
     currentTimeouts = [];
@@ -320,7 +890,11 @@ function endInduction() {
     const stimulusAudio = document.getElementById('stimulus-audio');
     stimulusAudio.pause();
     stimulusAudio.currentTime = 0;
-    
+
+    // 记录焦虑诱发结束时间
+    eegTimer.inductionEndTime = Date.now();
+
+    // 跳转到EEG结束页面
     showEEGPage('post');
 }
 
@@ -328,33 +902,38 @@ function endInduction() {
 function initializePosttestPage() {
     // 生成量表题目
     generateScaleQuestions(saiQuestions, 'post-sai-questions', 'post-sai');
-    
+
     // VAS滑块
     const postVas = document.getElementById('post-vas');
     const postVasValue = document.getElementById('post-vas-value');
     postVas.addEventListener('input', function() {
         postVasValue.textContent = this.value;
     });
-    
+
     // 提交按钮
     const submitBtn = document.getElementById('posttest-submit-btn');
     submitBtn.addEventListener('click', function() {
         // 保存VAS分数
         experimentData.posttest.vas = parseInt(postVas.value);
-        
+
         // 计算SAI分数
         const saiResult = calculateScaleScore(saiQuestions, 'post-sai');
         experimentData.posttest.sai = saiResult.answers;
-        
+
         // 验证是否所有题目都已回答
         if (saiResult.answers.length < saiQuestions.length) {
             alert('请完成所有题目后再提交！');
             return;
         }
-        
+
         showPage('result-page');
         displayResults();
     });
+}
+
+// 添加从EEG页面跳转到后测页面的函数
+function goToPosttestPage() {
+    showPage('posttest-page');
 }
 
 // 结果页面
